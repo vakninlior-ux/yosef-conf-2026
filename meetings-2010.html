@@ -8,6 +8,26 @@
 <title>כנס יוסף הראשון · 2010 · משפחת יוסף</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css">
+<style>
+  .gallery-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 56px; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .gallery-grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 3px; cursor: pointer; display: block; transition: opacity .18s; }
+  .gallery-grid img:hover { opacity: .82; }
+  #lb { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 9000; display: flex; align-items: center; justify-content: center; }
+  #lb[hidden] { display: none !important; }
+  #lb img { max-width: calc(100vw - 120px); max-height: calc(100vh - 80px); object-fit: contain; border-radius: 3px; }
+  .lb-close { position: fixed; top: 14px; inset-inline-end: 18px; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; padding: 4px 10px; }
+  .lb-nav { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.12); border: none; color: #fff; font-size: 2.4rem; padding: 12px 18px; cursor: pointer; border-radius: 3px; }
+  .lb-nav:hover { background: rgba(255,255,255,.22); }
+  #lb-prev { inset-inline-end: 14px; }
+  #lb-next { inset-inline-start: 14px; }
+  #lb-counter { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.65); font-size: .88rem; font-family: var(--sans); pointer-events: none; }
+  @media (max-width: 480px) {
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 5px; }
+    .lb-nav { padding: 8px 12px; font-size: 1.8rem; }
+    #lb img { max-width: calc(100vw - 80px); }
+  }
+</style>
 </head>
 <body>
 <a class="skip" href="#main">דלגו לתוכן</a>
@@ -16,10 +36,60 @@
   <h1>כנס יוסף הראשון · 2010</h1>
   <p>תמונות וסרטונים מהכנס הראשון של משפחת יוסף.</p>
 </div>
-<main id="main" class="simple">
-  <div class="notice">תמונות מהכנס יתווספו בקרוב.</div>
-  <div class="docs" id="media2010"></div>
+<main id="main">
+  <div class="gallery-wrap">
+    <div class="gallery-grid" id="gal2010"></div>
+  </div>
 </main>
+<div id="lb" hidden>
+  <button class="lb-close" id="lb-close">✕</button>
+  <button class="lb-nav" id="lb-prev">‹</button>
+  <img src="" alt="" id="lb-img">
+  <button class="lb-nav" id="lb-next">›</button>
+  <span id="lb-counter"></span>
+</div>
+<script>
+(function () {
+  var photos = ['DSC_0005.JPG','DSC_0011.JPG','DSC_0012.JPG','DSC_0013.JPG','DSC_0014.JPG','DSC_0015.JPG','DSC_0016.JPG','DSC_0017.JPG','DSC_0018.JPG','DSC_0022.JPG','DSC_0023.JPG','DSC_0024.JPG','DSC_0025.JPG','DSC_0026.JPG','DSC_0028.JPG','DSC_0029.JPG','DSC_0030.JPG','DSC_0031.JPG','DSC_0033.JPG','DSC_0035.JPG','DSC_0037.JPG','DSC_0045.JPG','DSC_0046.JPG','DSC_0048.JPG','DSC_0052.JPG','DSC_0054.JPG','DSC_0056.JPG','DSC_0875.JPG','DSC_0876.JPG','DSC_0877.JPG','DSC_0878.JPG','DSC_0879.JPG','DSC_0884.JPG','DSC_0885.JPG','DSC_0886.JPG','DSC_0887.JPG','DSC_0889.JPG','DSC_0890.JPG','DSC_0891.JPG','DSC_0892.JPG','DSC_0900.JPG','DSC_0903.JPG','DSC_0904.JPG','DSC_0907.JPG','DSC_0908.JPG','DSC_0909.JPG','DSC_0912.JPG','DSC_0914.JPG','DSC_0919.JPG','DSC_0921.JPG','DSC_0922.JPG','DSC_0924.JPG','DSC_0925.JPG','DSC_0927.JPG','DSC_0928.JPG','DSC_0932.JPG','DSC_0935.JPG','DSC_0939.JPG','DSC_0943.JPG','DSC_0944.JPG','DSC_0950.JPG','DSC_0956.JPG','DSC_0958.JPG','DSC_0962.JPG','DSC_0967.JPG','DSC_0971.JPG','DSC_0979.JPG','DSC_0981.JPG','DSC_0983.JPG','DSC_0987.JPG','DSC_0988.JPG','DSC_0991.JPG','DSC_0993.JPG','DSC_0994.JPG','DSC_0996.JPG','DSC_0999.JPG','DSC_1000.JPG','DSC_1001.JPG','DSC_1002.JPG','DSC_1003.JPG','DSC_1004.JPG','DSC_1005.JPG','DSC_1008.JPG','DSC_1010.JPG','DSC_1011.JPG','DSC_1013.JPG','DSC_1015.JPG','DSC_1017.JPG','DSC_1021.JPG','DSC_1022.JPG'];
+  var base = 'assets/photos-2010/';
+  var cur = 0;
+  var gal = document.getElementById('gal2010');
+  var lb  = document.getElementById('lb');
+  var lbImg = document.getElementById('lb-img');
+  var lbCnt = document.getElementById('lb-counter');
+
+  photos.forEach(function (f, i) {
+    var img = document.createElement('img');
+    img.src = base + f;
+    img.alt = 'תמונה ' + (i + 1) + ' מכנס יוסף 2010';
+    img.loading = 'lazy';
+    img.addEventListener('click', function () { open(i); });
+    gal.appendChild(img);
+  });
+
+  function open(i) {
+    cur = i;
+    lbImg.src = base + photos[cur];
+    lbCnt.textContent = (cur + 1) + ' / ' + photos.length;
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() { lb.hidden = true; document.body.style.overflow = ''; lbImg.src = ''; }
+  function prev() { cur = (cur - 1 + photos.length) % photos.length; lbImg.src = base + photos[cur]; lbCnt.textContent = (cur + 1) + ' / ' + photos.length; }
+  function next() { cur = (cur + 1) % photos.length; lbImg.src = base + photos[cur]; lbCnt.textContent = (cur + 1) + ' / ' + photos.length; }
+
+  document.getElementById('lb-close').addEventListener('click', close);
+  document.getElementById('lb-prev').addEventListener('click', prev);
+  document.getElementById('lb-next').addEventListener('click', next);
+  lb.addEventListener('click', function (e) { if (e.target === lb) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') next();
+    if (e.key === 'ArrowRight') prev();
+  });
+})();
+</script>
 <footer class="sitefoot"><div class="in"><span>משפחת יוסף</span> <span id="built"></span></div></footer>
 <script src="assets/data.js"></script>
 <script src="assets/common.js"></script>
