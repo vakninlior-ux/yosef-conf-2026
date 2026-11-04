@@ -19,7 +19,7 @@
           document.head.appendChild(kf);
         }
         var arr = document.createElement('strong');
-        arr.textContent = href === 'meetings-2026.html' ? ' ← כנסו לאישורי הגעה' : ' ← כנסו לזכרונות';
+        arr.textContent = href === 'meetings-2026.html' ? ' → כנסו לאישורי הגעה' : ' → כנסו לזכרונות';
         arr.style.cssText = 'margin-inline-start:10px;color:var(--c-conference);animation:rsvp-blink 2.2s ease-in-out infinite';
         h.appendChild(arr);
       }
