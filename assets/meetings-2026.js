@@ -14,22 +14,11 @@
 
   /* ── Firebase ── */
   var db = window.db || null;
+  var unsubscribeBranch = null;
   function branchDocId(idx) { return 'br_' + idx; }
 
-  function loadFromFirestore(idx, cb) {
-    if (!db) { cb(); return; }
-    db.collection('rsvp').doc(branchDocId(idx)).get()
-      .then(function (doc) {
-        if (doc.exists) {
-          var data = doc.data();
-          Object.keys(data).forEach(function (k) {
-            if (k.charAt(0) !== '_') st[k] = data[k];
-          });
-          saveLocal();
-        }
-        cb();
-      })
-      .catch(function () { cb(); });
+  function detachBranch() {
+    if (unsubscribeBranch) { unsubscribeBranch(); unsubscribeBranch = null; }
   }
 
   function saveToFirestore(idx, br, brKeys) {
@@ -88,6 +77,7 @@
 
   /* ── Branch list view ── */
   function showList() {
+    detachBranch();
     root.innerHTML = '';
     var grid = document.createElement('div'); grid.className = 'branch-grid';
     F.tree.forEach(function (br, idx) {
@@ -109,12 +99,48 @@
 
   /* ── Branch RSVP view ── */
   function showBranch(idx) {
+    detachBranch();
     var br = F.tree[idx];
     if (!br) { showList(); return; }
 
     if (db) root.innerHTML = '<p style="padding:16px;color:var(--muted)">טוען...</p>';
 
-    loadFromFirestore(idx, function () {
+    var rendered = false;
+    var refFns = []; /* ref() per key — called on every snapshot to refresh buttons */
+    var brKeys = [];
+    var sumEl;
+
+    function updBranch() {
+      var c = countFor(brKeys);
+      if (sumEl) sumEl.textContent = c.yes + ' מגיעים · ' + c.no + ' לא מגיעים · ' + c.pending + ' ממתינים';
+      updateTotalEl();
+    }
+
+    function applyData(doc) {
+      if (doc && doc.exists) {
+        var data = doc.data();
+        Object.keys(data).forEach(function (k) {
+          if (k.charAt(0) !== '_') st[k] = data[k];
+        });
+        saveLocal();
+      }
+      if (!rendered) {
+        rendered = true;
+        renderBranch();
+      } else {
+        refFns.forEach(function (fn) { fn(); });
+        updBranch();
+      }
+    }
+
+    if (db) {
+      unsubscribeBranch = db.collection('rsvp').doc(branchDocId(idx))
+        .onSnapshot(applyData, function () { if (!rendered) { rendered = true; renderBranch(); } });
+    } else {
+      renderBranch();
+    }
+
+    function renderBranch() {
       root.innerHTML = '';
 
       var back = document.createElement('a');
@@ -126,15 +152,7 @@
       root.appendChild(h2);
 
       var ul = document.createElement('ul'); ul.className = 'rul';
-      var brKeys = [];
-      var sumEl = document.createElement('p'); sumEl.className = 'bsum';
-
-      function updBranch() {
-        var c = countFor(brKeys);
-        sumEl.textContent = c.yes + ' מגיעים · ' + c.no + ' לא מגיעים · ' + c.pending + ' ממתינים';
-        updateTotalEl();
-        saveToFirestore(idx, br, brKeys);
-      }
+      sumEl = document.createElement('p'); sumEl.className = 'bsum';
 
       var bpfx = br.child + '::';
 
@@ -144,7 +162,7 @@
         li.className = 'rr l' + lvl;
         var nm = document.createElement('span'); nm.className = 'rnm'; nm.textContent = name;
         li.appendChild(nm);
-        if (!dead && key) {
+        if (key) {
           brKeys.push(key);
           var btns = document.createElement('span'); btns.className = 'rbtns';
           var yb = document.createElement('button'); yb.type = 'button'; yb.textContent = 'מגיע';
@@ -153,9 +171,10 @@
             yb.className = 'ry' + (st[key] === 'yes' ? ' on' : '');
             nb.className = 'rn' + (st[key] === 'no'  ? ' on' : '');
           }
+          refFns.push(ref);
           ref();
-          yb.addEventListener('click', function () { st[key] = st[key] === 'yes' ? '' : 'yes'; saveLocal(); ref(); updBranch(); });
-          nb.addEventListener('click', function () { st[key] = st[key] === 'no'  ? '' : 'no';  saveLocal(); ref(); updBranch(); });
+          yb.addEventListener('click', function () { st[key] = st[key] === 'yes' ? '' : 'yes'; saveLocal(); ref(); updBranch(); saveToFirestore(idx, br, brKeys); });
+          nb.addEventListener('click', function () { st[key] = st[key] === 'no'  ? '' : 'no';  saveLocal(); ref(); updBranch(); saveToFirestore(idx, br, brKeys); });
           btns.appendChild(yb); btns.appendChild(nb); li.appendChild(btns);
         }
         ul.appendChild(li);
@@ -177,7 +196,7 @@
       root.appendChild(ul);
       updBranch();
       root.appendChild(sumEl);
-    });
+    }
   }
 
   /* ── Router ── */
