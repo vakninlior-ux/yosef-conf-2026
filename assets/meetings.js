@@ -12,9 +12,15 @@
     if (href && !e.postponed) {
       var a = document.createElement('a'); a.href = href; a.textContent = label; h.appendChild(a);
       if (href === 'meetings-2026.html') {
+        if (!document.getElementById('rsvp-blink-kf')) {
+          var kf = document.createElement('style');
+          kf.id = 'rsvp-blink-kf';
+          kf.textContent = '@keyframes rsvp-blink{0%,100%{opacity:1}50%{opacity:0.15}}';
+          document.head.appendChild(kf);
+        }
         var arr = document.createElement('strong');
         arr.textContent = ' ← כנסו לאישורי הגעה';
-        arr.style.cssText = 'margin-inline-start:10px;color:var(--c-conference)';
+        arr.style.cssText = 'margin-inline-start:10px;color:var(--c-conference);animation:rsvp-blink 2.2s ease-in-out infinite';
         h.appendChild(arr);
       }
     } else { h.textContent = label; }
